@@ -236,9 +236,10 @@ nav.tabs button.on{color:var(--brand)}
 
   <!-- KHO -->
   <section id="vKho" class="hidden">
+    <button class="btn line hidden" id="khoVe" style="margin-bottom:12px" onclick="moGian((S.gian&&S.gian.maGian)||S.gians[0].maGian)">← Về gian bán hàng</button>
     <div class="card">
       <div class="row c"><h2 style="margin:0">Tồn kho</h2><select class="inp" id="khoGian" style="max-width:200px;padding:8px" onchange="taiKho()"></select></div>
-      <p class="muted xs" style="margin:6px 0 0">Bấm vào sản phẩm để nhập thêm hàng hoặc điều chỉnh kiểm kê.</p>
+      <p class="muted xs" id="khoHD" style="margin:6px 0 0">Bấm vào sản phẩm để nhập thêm hàng hoặc điều chỉnh kiểm kê.</p>
       <div class="tscroll" style="margin-top:8px"><table class="t"><thead><tr><th>Sản phẩm</th><th class="n">Nhập</th><th class="n">Bán</th><th class="n">Tồn</th></tr></thead><tbody id="khoBody"></tbody></table></div>
     </div>
     <div class="card"><h2>Phiếu nhập gần đây</h2><ul class="list" id="khoPhieu"></ul></div>
@@ -431,6 +432,7 @@ function moMenu(){
   const nut = [];
   if (S.user && S.user.vaiTro==='Ban tổ chức') nut.push(`<button class="btn ghost" onclick="dongModal();moAdmin('tq')">Về trang Quản trị</button>`);
   else if (S.gians.length > 1) nut.push(`<button class="btn ghost" onclick="dongModal();veChonGian()">Đổi gian</button>`);
+  if (S.user && S.user.vaiTro==='Bán hàng') nut.push(`<button class="btn ghost" onclick="dongModal();moKho(S.gian&&S.gian.maGian)">📦 Kho gian – nhập thêm hàng</button>`);
   nut.push(`<button class="btn line" onclick="dongModal();location.reload()">Tải lại app</button>`);
   nut.push(`<button class="btn bad" onclick="dangXuat()">Đăng xuất</button>`);
   moModal(`<h2 style="margin:0 0 4px">${esc(S.user.hoTen)}</h2><div class="muted small" style="margin-bottom:14px">${esc(S.user.vaiTro)} · ${esc(S.user.maGian)} · ${esc(S.user.maDN)}</div><div style="display:grid;gap:10px">${nut.join('')}</div>`);
@@ -756,9 +758,11 @@ async function taiDsVay(){
 
 /* ===== Kho ===== */
 function moKho(gianChon){
-  setHeader('Quản lý kho', S.user.hoTen, '#5a6b7d');
-  const ad = S.user.vaiTro==='Ban tổ chức';
-  setTabs(ad ? null : [{k:'k',t:'Tồn kho',i:'kho',fn:'moKho()'}], 'k');
+  const ad = S.user.vaiTro==='Ban tổ chức', nb = S.user.vaiTro==='Bán hàng';
+  setHeader(nb ? 'Kho gian ' + (gianChon || (S.gian && S.gian.maGian) || '') : 'Quản lý kho', S.user.hoTen, '#5a6b7d');
+  setTabs(ad || nb ? null : [{k:'k',t:'Tồn kho',i:'kho',fn:'moKho()'}], 'k');
+  $('khoVe').classList.toggle('hidden', !nb);
+  $('khoHD').textContent = nb ? 'Bấm vào sản phẩm để nhập thêm hàng cho gian (chỉ nhập thêm; điều chỉnh giảm do BTC làm).' : 'Bấm vào sản phẩm để nhập thêm hàng hoặc điều chỉnh kiểm kê.';
   $('khoGian').innerHTML = S.gians.filter(g=>g.loai!=='Vay vốn').map(g=>`<option value="${esc(g.maGian)}">${esc(g.maGian)} – ${esc(g.ten)}</option>`).join('');
   if (gianChon) $('khoGian').value = gianChon;
   show(ad ? 'vAdmin' : 'vKho'); if (!ad) taiKho();
@@ -778,7 +782,7 @@ function moNhap(maSP){
   const p = (S.khoDs||[]).find(x=>x.maSP===maSP); if (!p) return;
   S.maYC = uuid();
   moModal(`<h2 style="margin:0">${esc(p.ten)}</h2><div class="muted small">Tồn hiện tại: <b>${fmt(p.ton)}</b> ${esc(p.dvt||'')}</div>
-  <div class="seg" style="margin-top:12px"><button class="on" id="nkN" onclick="nkLoai(0)">Nhập thêm hàng</button><button id="nkD" onclick="nkLoai(1)">Điều chỉnh kiểm kê</button></div>
+  ${S.user.vaiTro==='Bán hàng' ? '' : `<div class="seg" style="margin-top:12px"><button class="on" id="nkN" onclick="nkLoai(0)">Nhập thêm hàng</button><button id="nkD" onclick="nkLoai(1)">Điều chỉnh kiểm kê</button></div>`}
   <label class="f" id="nkLb">Số lượng nhập thêm</label><input class="inp" id="nkSL" inputmode="numeric" style="font-size:24px;font-weight:800">
   <label class="f" id="nkLb2">Đợt / ghi chú</label><input class="inp" id="nkGC" placeholder="VD: Đợt 2 – bổ sung giữa giờ">
   <div id="nkMsg"></div><div class="row" style="margin-top:12px"><button class="btn line" onclick="dongModal()">Thôi</button><button class="btn" onclick="luuNhap('${esc(maSP)}')">Lưu</button></div>`);
